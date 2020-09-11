@@ -1,0 +1,17 @@
+body {
+    font-size: 18px;
+    color: #444;
+    font-family: sans-serif;
+    background-color: #d9d9d9;
+}
+
+canvas {
+    border: 1px solid black;
+    width: 1280px;
+    height: 720px;
+}
+
+h2,
+p{
+  text-align: center;
+}
