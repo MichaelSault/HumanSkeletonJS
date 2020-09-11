@@ -81,8 +81,8 @@ var frame = 0;
 
 //camera vars
 var cameraWidth = 0.0;
-var cameraDepth = -500.0;
-var cameraHeight = 0.0;
+var cameraDepth = -600.0;
+var cameraHeight = 400.0;
 
 var rotCamX = 0.0;
 var rotCamY = 0.0;
@@ -92,11 +92,10 @@ var test = [];
 var transArray = [];
 
 var start = 0;
-var frameNum;
+var frameNum = 0;
 var moveArray = [];
 
-var setUpDone = false;
-var firstRun = false;
+var canRun = false;
 
 //limb colours
 var hipColour;
@@ -125,11 +124,16 @@ var headColour;
 var eyeColour;
 
 
-
-
 //main setup function
 function setup() {
-	createCanvas(1280, 720, WEBGL);
+	if (window.innerWidth >= 1280){
+		createCanvas(1280, 720, WEBGL);
+	} else if (window.innerWidth < 1280 && window.innerWidth >= 852) {
+		createCanvas(852, 480, WEBGL);
+	} else if (window.innerWidth < 852) {
+		createCanvas(480, 360, WEBGL);
+	} else console.log("Error");
+	
 	frameRate(9999);
 
 	//generate limb colours
@@ -157,6 +161,7 @@ function setup() {
 	neckColour = color(random(0,255), random(0,255), random(0,255));
 	headColour = color(random(0,255), random(0,255), random(0,255));
 	eyeColour = color(random(0,255), random(0,255), random(0,255));
+	floorColour = color(random(0,255), random(0,255), random(0,255));
 
 }
 
@@ -167,9 +172,13 @@ function draw() {
     ambientLight(150);
     directionalLight(255, 255, 255, 0, 0, 1);
 
+    if (frame < frameNum-1){  //iterate
+		frame += 1;
+	} else canRun = false;  //and then loop
+
     push();
-    if (setUpDone == true) {
-		getNextFrame();
+    if (canRun == true) {
+		getNextFrame(frame);
 
 	  //=======================================================================
 	  //ANIMATION MATRICIES
@@ -179,7 +188,8 @@ function draw() {
 	  		//affects the entire skeleton as it is before any object is drawn
 	  		rotateX(rotCamX);
 	  		rotateY(rotCamY + 3.14159);
-	  		//box(5000, 1, 1500); //draws the floor
+	  		fill(floorColour)
+	  		box(5000, 10, 1500); //draws the floor
 
 			//------------------------------------------
 			//Spine --> Head
@@ -221,7 +231,7 @@ function draw() {
 			                	rotateY(radians(headY));
 			                	rotateZ(radians(headZ));
 			                	fill(headColour);
-			                	sphere(40, 30, 30);	//head
+			                	sphere(40, 24, 24);	//head
 			                	translate(15, -5, -30);
 			                	fill(eyeColour);
 			                	sphere(10, 15, 5);	//left eye
@@ -411,29 +421,38 @@ window.onload = function(event) {
 	document.getElementById('motionData').addEventListener('change', parseMotionData, false);
 }
 
-function parseMotionData(event) {
+function parseMotionData() {
+	test = [];
+	transArray = [];
+
+	start = 0;
+	frameNum = 0;
+	frame = 0;
+
+	moveArray = [];
+
+	canRun = false;
+
 	var fileReader = new FileReader();
 	
 	var file = event.target.files[0];
 	fileReader.readAsText(file);
 
-	fileReader.onload = function(event) {
+	fileReader.onload = function() {
 		var moveData = event.target.result;
-		//console.log(moveData);
 		moveArrayBuilder(moveData);
 	}
 }
 
 function moveArrayBuilder(moveData) {
 	var test = moveData.split('\n');
-	console.log(test[12]);
 
 	//split by line and then find where the datapoints start
 	for (var i = 0; i < test.length; i++) {
-		console.log(test[i]);
 		if (test[i] == 'MOTION') {
-			console.log("Finished");
 			var start = i + 3;
+			var frames = test[i+1].split(' ');
+			frameNum = frames[1];
 			break;
 		}
 	}
@@ -448,113 +467,131 @@ function moveArrayBuilder(moveData) {
 		}
 		moveArray.push(tempArray);
 	}
-	console.log(moveArray); //move array is now built as intended
-	console.log(moveArray[1][5]);
-	setUpDone = true;
+
+	canRun = true;
 }
 
 //=======================================================================
 //APPLY MOTION ANIMATION FROM BVH
 //=======================================================================
-function getNextFrame() {
-	moveX = moveArray[frame][1];
-	moveY = moveArray[frame][2];
-	moveZ = moveArray[frame][3];
+function getNextFrame(frame) {
+	moveX = moveArray[frame][0];
+	moveY = moveArray[frame][1];
+	moveZ = moveArray[frame][2];
 
-	hipsX = moveArray[frame][4];
-	hipsY = moveArray[frame][5];
-	hipsZ = moveArray[frame][6];
+	hipsX = moveArray[frame][3];
+	hipsY = moveArray[frame][4];
+	hipsZ = moveArray[frame][5];
 
-	leftUpLegX = moveArray[frame][7];
-	leftUpLegY = moveArray[frame][8];
-	leftUpLegZ = moveArray[frame][9];
+	leftUpLegX = moveArray[frame][6];
+	leftUpLegY = moveArray[frame][7];
+	leftUpLegZ = moveArray[frame][8];
 
-	leftLowLegX = moveArray[frame][10];
-	leftLowLegY = moveArray[frame][11];
-	leftLowLegZ = moveArray[frame][12];
+	leftLowLegX = moveArray[frame][9];
+	leftLowLegY = moveArray[frame][10];
+	leftLowLegZ = moveArray[frame][11];
 
-	leftFootX = moveArray[frame][13];
-	leftFootY = moveArray[frame][14];
-	leftFootZ = moveArray[frame][15];
+	leftFootX = moveArray[frame][12];
+	leftFootY = moveArray[frame][13];
+	leftFootZ = moveArray[frame][14];
 
-	leftToeX = moveArray[frame][16];
-	leftToeY = moveArray[frame][17];
-	leftToeZ = moveArray[frame][18];
+	leftToeX = moveArray[frame][15];
+	leftToeY = moveArray[frame][16];
+	leftToeZ = moveArray[frame][17];
 
-	rightUpLegX = moveArray[frame][19];
-	rightUpLegY = moveArray[frame][20];
-	rightUpLegZ = moveArray[frame][21];
+	rightUpLegX = moveArray[frame][18];
+	rightUpLegY = moveArray[frame][19];
+	rightUpLegZ = moveArray[frame][20];
 
-	rightLowLegX = moveArray[frame][22];
-	rightLowLegY = moveArray[frame][23];
-	rightLowLegZ = moveArray[frame][24];
+	rightLowLegX = moveArray[frame][21];
+	rightLowLegY = moveArray[frame][22];
+	rightLowLegZ = moveArray[frame][23];
 
-	rightFootX = moveArray[frame][25];
-	rightFootY = moveArray[frame][26];
-	rightFootZ = moveArray[frame][27];
+	rightFootX = moveArray[frame][24];
+	rightFootY = moveArray[frame][25];
+	rightFootZ = moveArray[frame][26];
 
-	rightToeX = moveArray[frame][28];
-	rightToeY = moveArray[frame][29];
-	rightToeZ = moveArray[frame][30];
+	rightToeX = moveArray[frame][27];
+	rightToeY = moveArray[frame][28];
+	rightToeZ = moveArray[frame][29];
 
-	spineX = moveArray[frame][31];
-	spineY = moveArray[frame][32];
-	spineZ = moveArray[frame][33];
+	spineX = moveArray[frame][30];
+	spineY = moveArray[frame][31];
+	spineZ = moveArray[frame][32];
 
-	spine1X = moveArray[frame][34];
-	spine1Y = moveArray[frame][35];
-	spine1Z = moveArray[frame][36];
+	spine1X = moveArray[frame][33];
+	spine1Y = moveArray[frame][34];
+	spine1Z = moveArray[frame][35];
 
-	neckX = moveArray[frame][37];
-	neckY = moveArray[frame][38];
-	neckZ = moveArray[frame][39];
+	neckX = moveArray[frame][36];
+	neckY = moveArray[frame][37];
+	neckZ = moveArray[frame][38];
 
-	headX = moveArray[frame][40];
-	headY = moveArray[frame][41];
-	headZ = moveArray[frame][42];
+	headX = moveArray[frame][39];
+	headY = moveArray[frame][40];
+	headZ = moveArray[frame][41];
 
-	leftShoulderX = moveArray[frame][43];
-	leftShoulderY = moveArray[frame][44];
-	leftShoulderZ = moveArray[frame][45];
+	leftShoulderX = moveArray[frame][42];
+	leftShoulderY = moveArray[frame][43];
+	leftShoulderZ = moveArray[frame][44];
 
-	leftUpArmX = moveArray[frame][46];
-	leftUpArmY = moveArray[frame][47];
-	leftUpArmZ = moveArray[frame][48];
+	leftUpArmX = moveArray[frame][45];
+	leftUpArmY = moveArray[frame][46];
+	leftUpArmZ = moveArray[frame][47];
 
-	leftLowArmX = moveArray[frame][49];
-	leftLowArmY = moveArray[frame][50];
-	leftLowArmZ = moveArray[frame][51];
+	leftLowArmX = moveArray[frame][48];
+	leftLowArmY = moveArray[frame][49];
+	leftLowArmZ = moveArray[frame][50];
 
-	leftHandX = moveArray[frame][52];
-	leftHandY = moveArray[frame][53];
-	leftHandZ = moveArray[frame][54];
+	leftHandX = moveArray[frame][51];
+	leftHandY = moveArray[frame][52];
+	leftHandZ = moveArray[frame][53];
 
-	leftThumbX = moveArray[frame][58];
-	leftThumbY = moveArray[frame][59];
-	leftThumbZ = moveArray[frame][60];
+	leftThumbX = moveArray[frame][57];
+	leftThumbY = moveArray[frame][58];
+	leftThumbZ = moveArray[frame][59];
 
-	rightShoulderX = moveArray[frame][61];
-	rightShoulderY = moveArray[frame][62];
-	rightShoulderZ = moveArray[frame][63];
+	rightShoulderX = moveArray[frame][60];
+	rightShoulderY = moveArray[frame][61];
+	rightShoulderZ = moveArray[frame][62];
 
-	rightUpArmX = moveArray[frame][64];
-	rightUpArmY = moveArray[frame][65];
-	rightUpArmZ = moveArray[frame][66];
+	rightUpArmX = moveArray[frame][63];
+	rightUpArmY = moveArray[frame][64];
+	rightUpArmZ = moveArray[frame][65];
 
-	rightLowArmX = moveArray[frame][67];
-	rightLowArmY = moveArray[frame][68];
-	rightLowArmZ = moveArray[frame][69];
+	rightLowArmX = moveArray[frame][66];
+	rightLowArmY = moveArray[frame][67];
+	rightLowArmZ = moveArray[frame][68];
 
-	rightHandX = moveArray[frame][70];
+	rightHandX = moveArray[frame][69];
 	rightHandY = moveArray[frame][71];
 	rightHandZ = moveArray[frame][72];
 
-	rightThumbX = moveArray[frame][76];
-	rightThumbY = moveArray[frame][77];
+	rightThumbX = moveArray[frame][75];
+	rightThumbY = moveArray[frame][76];
 	rightThumbZ = moveArray[frame][77];
+}
 
+function runAgain(){
+	canRun = true;
+	frame = 0;
+}
 
-	if (frame < frameNum-1){  //iterate
-	frame += 1;  
-	} else frame = 0;  //and then loop
+function testFunction(output){
+	test = [];
+	transArray = [];
+
+	start = 0;
+	frameNum = 0;
+	frame = 0;
+
+	moveArray = [];
+
+	canRun = false;
+	
+	fetch(output)
+		.then(response => response.text())
+		.then(data => {
+			moveArrayBuilder(data)
+		});
 }
