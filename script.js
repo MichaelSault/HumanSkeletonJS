@@ -126,8 +126,14 @@ var eyeColour;
 
 //main setup function
 function setup() {
-	
-	createCanvas(1280, 720, WEBGL);
+	if (window.innerWidth >= 1280){
+		createCanvas(1280, 720, WEBGL);
+	} else if (window.innerWidth < 1280 && window.innerWidth >= 852) {
+		createCanvas(852, 480, WEBGL);
+	} else if (window.innerWidth < 852) {
+		createCanvas(480, 360, WEBGL);
+	} else console.log("Error");
+
 	frameRate(9999);
 
 	//generate limb colours
