@@ -1,3 +1,5 @@
+#Live Demo: https://skeleton.michaelsault.ca/
+
 # HumanSkeletonJS
 A javascript version of my human skeleton motion data display.
 
